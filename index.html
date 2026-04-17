@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Heart Disease AI Predictor</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      max-width: 800px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0 15px 0;
+    }
+
+    button {
+      padding: 10px;
+      background: black;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .card {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Heart Disease Prediction System</h1>
+
+<div class="card">
+
+Age:
+<input id="age" type="number">
+
+Sex:
+<select id="sex">
+  <option value="1">Male</option>
+  <option value="0">Female</option>
+</select>
+
+Chest Pain Type (0–3):
+<input id="cp" type="number">
+
+Resting Blood Pressure:
+<input id="trestbps" type="number">
+
+Cholesterol:
+<input id="chol" type="number">
+
+Fasting Blood Sugar (0 or 1):
+<input id="fbs" type="number">
+
+Rest ECG (0–2):
+<input id="restecg" type="number">
+
+Maximum Heart Rate (bpm):
+<input id="thalach" type="number">
+
+Exercise Induced Angina (0 or 1):
+<input id="exang" type="number">
+
+Heart Stress Level (Oldpeak):
+<input id="oldpeak" type="number">
+
+Heart Response Under Stress:
+<select id="slope">
+  <option value="1">Improving</option>
+  <option value="2">Stable</option>
+  <option value="3">Worsening</option>
+</select>
+
+Blocked Arteries (0–3):
+<input id="ca" type="number">
+
+Blood Flow Condition:
+<select id="thal">
+  <option value="3">Normal</option>
+  <option value="6">Fixed Defect</option>
+  <option value="7">Reversible Defect</option>
+</select>
+
+<button onclick="predict()">Predict</button>
+
+</div>
+
+<div class="card">
+<h2>Result</h2>
+<div id="result">Waiting...</div>
+</div>
+
+<script>
+let session;
+
+async function loadModel() {
+    session = await ort.InferenceSession.create("./heart_model.onnx");
+}
+
+loadModel();
+
+async function predict() {
+
+    const input = new Float32Array([
+        +age.value,
+        +sex.value,
+        +cp.value,
+        +trestbps.value,
+        +chol.value,
+        +fbs.value,
+        +restecg.value,
+        +thalach.value,
+        +exang.value,
+        +oldpeak.value,
+        +slope.value,
+        +ca.value,
+        +thal.value
+    ]);
+
+    const tensor = new ort.Tensor("float32", input, [1, 13]);
+
+    const results = await session.run({ input: tensor });
+
+    const output = results.output.data[0];
+
+    let risk =
+        output > 0.8 ? "🔴 High Risk" :
+        output > 0.5 ? "🟠 Moderate Risk" :
+        "🟢 Low Risk";
+
+    document.getElementById("result").innerHTML = `
+        <b>Probability:</b> ${output.toFixed(3)} <br>
+        <b>Assessment:</b> ${risk}
+    `;
+}
+</script>
+
+</body>
+</html>
